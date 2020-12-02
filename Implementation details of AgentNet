@@ -1,0 +1,37 @@
+Neural model
+    The encoder and decoder layers of AgentNet is composed of Multi-Layer Perceptrons (MLP). The dimension notation
+    such as [32, 16, 1] means that the model is consists of three perceptron layers with 32, 16 and 1 neurons in each layer.
+    Also, dims. is an abbreviation of dimensions.
+
+    All of the encoding layers of AgnetNet is composed of [Input dims, 256, 256, Attention dims. X # of Attentions].
+    Here, input dimensions are chosen as sum of the number of state variables and additional variables such as global
+    variable (as in AgentNet for AOUP) and indicator variable (as in AOUP for CS). The form of the final dimension
+    indicates that each output of encoder (key, query, and value) will be processed separately.
+
+    With these outputs and (additional) global variables, neural attention is applied and attention coefficients eij are
+    calculated. (Details of neural attention is explained in section 3 of SI. appendix.) We apply additional LeakyReLU
+    nonlinearity (with a negative slope of 0:2) to the attention coefficients and normalize them with softmax, following [5].
+
+    After attentions are multiplied to respective values and averaged, we concatenate the (original target agent’s) value and
+    its averaged attention-weighted values (from others) and feeds it into the decoder. Since two tensors are concatenated,
+    the last dimension of this tensor has twice the length of the original dimension of value tensor. Decoder consists of [2 X
+    value dims., 128, 128, output dims.]. Note that the dimension of the value vector is the same as [Attention dims. X #
+    of Attentions], since it is an output of the encoder.
+
+    In the stochastic setting, decoded tensor further feeds into other layers to obtain sufficient statistics for the probabilistic
+    distribution. In this paper, those statistics are means and covariance matrixes. Layers for theses values are consist
+    of [output dims., 64, 64, corresponding number of variables]. For instance, a 6-dimensional covariance matrix is
+    uniquely decided with 21 variables, thus the final dimension of covariance layer is 21.
+
+    In the case of the target system with probable time correlations, we adopted Long Short-Term Memory (LSTM) as an
+    encoder to capture those correlations.[63] Hidden states and cell states have 128 dims. each and initialized by additional
+    MLPs that jointly trained with the main module. As explained in the main manuscript, AgentNet checks each time step
+    whether an agent is new and present. If an agent is newly entered, new LSTM hidden states are initialized. Otherwise,
+    hidden states succeeded from the previous result.
+
+
+Training
+    All of the training used 2 to 10 NVIDIA TITAN V GPUs, the longest training for single model took less than 2 days.
+    ReLU activations and Adam Optimizer [64] are used for construction of model and training. The learning rate was set
+    to 0.0005 and decreased to 70% of pervious value when the test loss remains still for 50 epochs. Table 1 shows further
+    details of the model for each system, including the number of attention heads.
