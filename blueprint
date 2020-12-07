@@ -1,0 +1,18 @@
+아주 옛날의 status가 현재 상태에 영향을 미칠 일이 거의 없을 듯
+굳이 LSTM 할 필요까지야 있나? RNN으로 바꿔
+
+
+현재 status의 표현은 행렬로
+
+[
+[질량, 위치, 속도]
+[질량, 위치, 속도]
+...
+]
+이런 식으로 표현됨
+
+graph attention layer는 이 status 를 그래프로 인식해서 하나의 output을 내는데, status랑 dimention이 같도록 하자
+
+그래서 ratgo's blog에 있는 그림의 W_hh와 W_xh 대신에 Gat를 넣는다?
+
+그리고 돌린다? 슙라
