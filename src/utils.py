@@ -1,7 +1,10 @@
 import torch
 
+def load_data():
+    pass
 
-# 한 번의 상황으로도 여러 개의 학습 데이터를 만들 수 있다.?
+
+# 한 번의 상황으로 여러 개의 학습 데이터를 만들 수 있다.?
 def make_batch(states):
     """
     :param states:
