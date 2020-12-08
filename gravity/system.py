@@ -70,34 +70,44 @@ class System():
             acc_current = force_current / ptl.m
             ptl.step(self.dt, acc_current)
 
-        self.step_number += 1
+
 
         if self.save:
             """
             dim
             n_particle          // 여기까진 존재했었다?
-            step_number         // 여기부터 적기 시작한다?
             particles[0].m      // 예를 들어 2차원 시스템에서 두 개의 particle 이 있다? 
-            particles[0].x[0]    
-            particles[0].x[1]
             particles[1].m
+            particles[0].x[0]    
+            particles[0].x[1]    
+            particles[0].v[0]    
+            particles[0].v[1]
             particles[1].x[0]
-            particles[1].x[1]
-            step_number
+            particles[1].x[1]   
+            particles[1].v[0]    
+            particles[1].v[1]
             ...                 // 계속 이런식이다?
             """
             str_append = ''
-            str_append += (str(self.step_number) + '\n')
-            for ptl in self.particles:
-                str_append += (str(ptl.m) + '\n')
+            # str_append += (str(self.step_number) + '\n')
+            if self.step_number == 0:
+                for ptl in self.particles: # 질량 먼저 적는다
+                    str_append += (str(ptl.m) + '\n')
+                    print('fuck')
+
+            for ptl in self.particles: # 그 다음 위치와 속도
                 for i in range(len(ptl.x)):
                     str_append += (str(ptl.x[i]) + '\n')
+                for j in range(len(ptl.v)):
+                    str_append += (str(ptl.v[i]) + '\n')
 
             t_index_str = str(testcase_index).zfill(10) # 0으로 채워서 길이를 10으로 통일
 
-            fd = open("./{0}/{1}.txt".format(self.name, t_index_str), 'a')  # appending 모드다?
+            fd = open("../data/{0}/{1}.txt".format(self.name, t_index_str), 'a')  # appending 모드다?
             fd.write(str_append)
             fd.close()
+
+        self.step_number += 1
 
     def check(self, min_distance):
         # check if the particles are too close or not
@@ -126,7 +136,7 @@ class System():
 
     def make_testcase(self, frame_number, testcase_number, min_distance):
         # make system's own directory
-        dir = "./" + self.name
+        dir = "../data/" + self.name
         if not os.path.exists(dir):
             os.makedirs(dir)
         for testcase_index in range(testcase_number):
@@ -136,7 +146,7 @@ class System():
             n_particle
             """
             t_index_str = str(testcase_index).zfill(10)  # 0으로 채워서 길이를 10으로 통일
-            fd = open("./{0}/{1}.txt".format(self.name, t_index_str), 'w')
+            fd = open("../data/{0}/{1}.txt".format(self.name, t_index_str), 'w')
             fd.write("{0}\n{1}\n".format(self.dim, self.n_particles))
             fd.close()
 
@@ -145,6 +155,8 @@ class System():
                 v_new = np.array([random.uniform(-10, 10) for _ in range(self.dim)])
                 m_new = random.uniform(0, 10)
                 ptl.set_state(x_new, v_new, m_new)
+
+            self.step_number = 0
 
             for _ in range(frame_number):
                 if self.check(min_distance):
