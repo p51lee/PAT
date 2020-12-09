@@ -93,7 +93,7 @@ class System():
             if self.step_number == 0:
                 for ptl in self.particles: # 질량 먼저 적는다
                     str_append += (str(ptl.m) + '\n')
-                    print('fuck')
+                    # print('fuck')
 
             for ptl in self.particles: # 그 다음 위치와 속도
                 for i in range(len(ptl.x)):

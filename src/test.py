@@ -1,7 +1,6 @@
 import torch
 import os
+from utils import load_data
 
-t = torch.tensor([[1], [2], [3]])
-a, b = t.size()
-fn = 'www.txt'
-print(fn[-3:])
+
+print(torch.FloatTensor(load_data('2ptlgo', 1)))

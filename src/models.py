@@ -20,4 +20,5 @@ class FCGAT(nn.Module):
     def forward(self, x):
         x = F.dropout(x, self.dropout, training=self.training)
         x = torch.cat([att(x) for att in self.attentions], dim=1)
+        x = self.out_att(x)
         return F.dropout(x, self.dropout, training=self.training)

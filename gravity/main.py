@@ -20,7 +20,7 @@ ptl2 = IdenticalParticle(m=1,
                          v_init=np.array([-1, 0], dtype=float))
 system_2.add(ptl1)
 system_2.add(ptl2)
-system_2.make_testcase(10000, 3, 0.01)
+system_2.make_testcase(10, 3, 0.01)
 # n = 1000000
 # for i in range(n):
 #     if (100 * i) % n == 0:
