@@ -4,23 +4,25 @@ from system import System
 import numpy as np
 import matplotlib.pyplot as plt
 
-system_2 = System(name = "2ptlgo",
+dim = 3
+n_particle = 10
+dt = 0.0001
+
+system_2 = System(name = "10ptlgo",
                   n = 2.,
                   k = -1.,
-                  dt = 0.001,
-                  n_particles = 2,
-                  dim = 2,
+                  dt = dt,
+                  n_particles = n_particle,
+                  dim = dim,
                   save = True)
 
-ptl1 = IdenticalParticle(m=1,
-                         x_init=np.array([0, 1], dtype=float),
-                         v_init=np.array([1, 0], dtype=float))
-ptl2 = IdenticalParticle(m=1,
-                         x_init=np.array([0, -1], dtype=float),
-                         v_init=np.array([-1, 0], dtype=float))
-system_2.add(ptl1)
-system_2.add(ptl2)
-system_2.make_testcase(10, 3, 0.01)
+for _ in range(n_particle):
+    ptl1 = IdenticalParticle(m=1,
+                             x_init=np.array([0] * dim, dtype=float),
+                             v_init=np.array([0] * dim, dtype=float))
+    system_2.add(ptl1)
+
+system_2.make_testcase(10, 1000, 0.01)
 # n = 1000000
 # for i in range(n):
 #     if (100 * i) % n == 0:

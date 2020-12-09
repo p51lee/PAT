@@ -1,9 +1,11 @@
 import os
 import glob
 import time
+from datetime import datetime
 import random
 import argparse
 import numpy as np
+from scipy.stats import t
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables CUDA training.')
 parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
 parser.add_argument('--seed', type=int, default=69, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=10000, help='Number of epochs to train.')
+parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train.')
 parser.add_argument('--lr', type=float, default=0.005, help='Initial learning rate.')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
 parser.add_argument('--hidden', type=int, default=128, help='Number of hidden units.')
@@ -36,15 +38,17 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-system_name = '2ptlgo' # input("Enter system name")
+system_name = '10ptlgo' # input("Enter system name")
+dimension = 3
+
 
 # Load data (only for some information)
 data_temp = load_data(system_name, 0)
 
 # Model and optimizer
-model = FCGAT(n_input_features=5,
+model = FCGAT(n_input_features=1 + 2*dimension,
               n_hidden_features=args.hidden,
-              n_output_features=4,
+              n_output_features=2*dimension,
               dropout=args.dropout,
               n_heads=args.nb_heads,
               alpha=args.alpha
@@ -66,7 +70,7 @@ if args.cuda:
     # idx_test = idx_test.cuda()
 
 
-def train(batch):  # batch starts from 0
+def train(batch, epoch, epoch_total, log_dir):  # batch starts from 0
     # global variables : model, system_name
     t = time.time()
     model.train()
@@ -90,31 +94,42 @@ def train(batch):  # batch starts from 0
 
     output_batch = torch.stack(outputs)
 
-    print(input_features_batch.size(), output_batch.size(), target_features_batch.size())
-
     loss_train = F.mse_loss(output_batch, target_features_batch)
 
     loss_train.backward()
     optimizer.step()
 
-    print('Batch: {:04d}'.format(batch + 1),
-          'loss_train: {:.4f}'.format(loss_train.data.item()),
-          'time: {:.4f}s'.format(time.time() - t))
+    fd = open(log_dir,'a')
+    current_log = "{0}\n{1}\n{2}\n{3}\n".format(epoch, batch, loss_train.data.item(), time.time() - t)
+    fd.write(current_log)
+    fd.close()
+
+    print('{:6.3f}%'.format(epoch*100/epoch_total),
+          ' | ',
+          'Epoch: {:08d}'.format(epoch + 1),
+          ' | ',
+          'Batch: {:08d}'.format(batch + 1),
+          ' | ',
+          'loss_train: {:10.4f}'.format(loss_train.data.item()),
+          ' | ',
+          'time: {:7.4f}s'.format(time.time() - t),
+          )
 
     return loss_train.data.item()
 
 
-# train model
-t_total = time.time()
-loss_values = []
-bad_counter = 0
-best = args.epochs + 1
-best_epoch = 0
+def compute_test():
+    # global: model, system_name
+    dir = "../data/" + system_name + "_eval"
+    if not os.path.exists(dir):
+        print("test cases do not exist.")
+        return
+    else:
+        model.eval()
 
-for epoch in range(args.epochs):
     loss_value = 0
     batch = 0
-    while(True):
+    while (True):
         loss_value_petit = train(batch)
         if not loss_value_petit:
             break
@@ -124,11 +139,37 @@ for epoch in range(args.epochs):
 
     loss_values.append(loss_value)
 
-    if loss_values[-1] < best:
+
+# train model
+t_total = time.time()
+loss_values = []
+bad_counter = 0
+best = 0
+best_epoch = 0
+now = datetime.today().strftime('%Y_%m_%d %H_%M_%S')
+if not os.path.exists("../train log/{0}".format(system_name)):
+    os.makedirs("../train log/{0}".format(system_name))
+log_dir = "../train log/{1}/{0}.txt".format(now, system_name)
+
+for epoch in range(args.epochs):
+    loss_value = 0
+    batch = 0
+    while(True):
+        loss_value_petit = train(batch, epoch, args.epochs, log_dir)
+        if not loss_value_petit:
+            break
+        else:
+            loss_value += loss_value_petit
+        batch += 1
+
+    loss_values.append(loss_value)
+
+    if loss_values[-1] < best or best == 0:
         torch.save(model.state_dict(), '../model_save/{0}_{1}.pkl'.format(system_name, epoch))
         best = loss_values[-1]
         best_epoch = epoch
         bad_counter = 0
+        print("hit!")
     else:
         bad_counter += 1
 
@@ -148,7 +189,7 @@ for file in files:
         os.remove(file)
 
 print("Optimization Finished!")
-print("Total time elapsed: {:.4f}s".format(time.time() - t_total))
+print("Total time elapsed: {:.4f}min".format((time.time() - t_total)/60))
 
 # Restore best model
 print('Loading {}th epoch'.format(best_epoch))

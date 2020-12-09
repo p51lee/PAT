@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import random
+import math
 
 from typing import List
 
@@ -139,7 +140,10 @@ class System():
         dir = "../data/" + self.name
         if not os.path.exists(dir):
             os.makedirs(dir)
+
         for testcase_index in range(testcase_number):
+            if math.floor(testcase_index * 1000 / testcase_number) != math.floor((testcase_index - 1) * 1000 / testcase_number):
+                print("Generating.. {:5.1f}%".format(testcase_index * 100 / testcase_number))
             """
             <name.txt>
             dim

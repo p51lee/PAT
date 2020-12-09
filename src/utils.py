@@ -63,3 +63,4 @@ def make_batch(states):
         target_batch.append([ptl_state[1:] for ptl_state in state])  # 결과 state, 맨 앞의 질량을 뺸다.
 
     return input_batch, target_batch
+
