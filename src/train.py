@@ -41,7 +41,7 @@ if args.cuda:
 
 system_name = '3ptl_2dim_128' # input("Enter system name")
 dimension = 2
-epoch_size = 150
+epoch_size = 20
 total_epoch_size = 180
 
 
@@ -192,7 +192,7 @@ for epoch in range(args.epochs):
     frame_temp_2 = torch.FloatTensor(feat_temp[6]).cuda()
 
     frame_model = model(frame_temp_1)
-    print("Previous state: ", feat_temp)
+    print("Previous state: ", frame_temp_1)
     print("True value: ", frame_temp_2)
     print('Model prediction: ', frame_model)
     model.train()
