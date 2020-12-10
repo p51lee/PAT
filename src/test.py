@@ -3,4 +3,7 @@ import os
 from utils import load_data
 
 
-print(torch.FloatTensor(load_data('2ptlgo', 1)))
+x = torch.FloatTensor([[0,0],[0,0]])
+y = torch.FloatTensor([[2,2],[2,2]])
+criterion = torch.nn.MSELoss()
+print(criterion(x,y))

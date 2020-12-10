@@ -2,3 +2,5 @@
 data/
 model_save/
 train log/
+data_comp/
+data_eval/
