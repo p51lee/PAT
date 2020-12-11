@@ -137,6 +137,18 @@ class System():
         plt.ylim(-2, 2)
         plt.show()
 
+    def file_init(self, testcase_index):
+        """
+        <name.txt>
+        dim
+        n_particle
+        """
+        t_index_str = str(testcase_index).zfill(10)  # 0으로 채워서 길이를 10으로 통일
+        fd = open("../data/{0}/{1}.txt".format(self.name, t_index_str), 'w')
+        fd.write("{0}\n{1}\n".format(self.dim, self.n_particles))
+        fd.close()
+
+
     def make_testcase(self, frame_number, testcase_number, min_distance):
         # make system's own directory
         dir = "../data/" + self.name

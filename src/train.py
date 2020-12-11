@@ -39,7 +39,7 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-system_name = '3ptl_2dim_lin_064' # input("Enter system name")
+system_name = '3ptl_2dim_lin_256' # input("Enter system name")
 dimension = 2
 epoch_size = 150
 total_epoch_size = 180
@@ -53,7 +53,7 @@ data_temp = load_data(system_name, 0)
 model = FCGAT(n_input_features=dimension,
               n_hidden_features1=args.hidden1,
               n_hidden_features2=args.hidden2,
-              n_output_features=dimension,
+              n_output_features=dimension*2,
               dropout=args.dropout,
               n_heads1=args.nb_heads1,
               n_heads2=args.nb_heads2,
@@ -199,8 +199,8 @@ for epoch in range(args.epochs):
 
     frame_model = model(frame_temp_1)
     # print("Previous state:   ", frame_temp_1[0])
-    print("True value:       ", frame_temp_2)
-    print('Model prediction: ', frame_model)
+    # print("True value:       ", frame_temp_2)
+    # print('Model prediction: ', frame_model)
     model.train()
 
     loss_values.append(loss_value)

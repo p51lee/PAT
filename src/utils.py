@@ -186,6 +186,6 @@ def make_batch(states):
                 input_frame.append(rel_position)
 
         input_batch.append(input_frame)  # 이 전의 state 를 input 으로 기록
-        target_batch.append([state[0][j] - states[i-1][0][j] for j in range(len(state[0])-2)]) # 첫 번째 particle 의 운동 변화을 학습한다.  # 결과 state, 맨 앞의 질량을 뺸다.
+        target_batch.append([state[0][j] - states[i-1][0][j] for j in range(len(state[0]))]) # 첫 번째 particle 의 운동 변화을 학습한다.  # 결과 state, 맨 앞의 질량을 뺸다.
 
     return input_batch, target_batch

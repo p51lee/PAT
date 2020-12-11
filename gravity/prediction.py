@@ -8,17 +8,23 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/
 
 from gravity_utils import load_data
 
-sys_name = "3ptl_2dim_lin_control"
+sys_origin = "3ptl_2dim_lin"
+sys_name = sys_origin + "_control"
 comp_rate = 128
-sys_comp_name = sys_name + "_" + "{:04d}".format(comp_rate)
+sys_comp_name = sys_name + "_" + "{:03d}".format(comp_rate)
+sys_origin_comp = sys_origin +  "_" + "{:03d}".format(comp_rate)
 
 dim = 2
 n_particle = 3
 dt = 0.0005 * comp_rate
 
+dir = "../data/" + sys_comp_name
+if not os.path.exists(dir):
+    os.makedirs(dir)
+
 file_index = 0
 while True:
-    data = load_data(sys_comp_name, file_index)
+    data = load_data(sys_origin_comp, file_index)
     if not data:
         break
 
@@ -39,6 +45,7 @@ while True:
                                  v_init=np.array(initial_frame[ptl_idx][2:4], dtype=float))
         system_2.add(ptl1)
 
+    system_2.file_init(file_index)
     for _ in range(n_frames):
         system_2.step(file_index)
 
