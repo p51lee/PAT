@@ -129,8 +129,26 @@ def make_batch(states):
     for i, state in enumerate(states):
         if i == 0:
             continue
-        input_batch.append(states[i - 1])  # 이 전의 state 를 input 으로 기록
-        target_batch.append(state)  # 결과 state, 맨 앞의 질량을 뺸다.
+
+        # 첫 번째 입자에 대한 상대위치를 적자
+        prev_state = states[i-1]
+        first_particle_position_vec = prev_state[0][0:2]
+
+        # input 으로 들어가는건 첫 번째 입자의 속도, 그리고 나머지들의 상대 위치이다.
+        input_frame = []
+        input_frame.append(prev_state[0][2:4]) # 먼저 첫 번째 입자의 속도를 넣는다.
+
+        for idx, ptl_state in enumerate(prev_state):
+            if idx == 0: # 우리는 나머지 입자들을 원한다.
+                continue
+            else:
+                rel_position = []
+                for pos_i, position in enumerate(ptl_state[0:2]):
+                    rel_position.append(position-first_particle_position_vec[pos_i])
+                input_frame.append(rel_position)
+
+        input_batch.append(input_frame)  # 이 전의 state 를 input 으로 기록
+        target_batch.append([state[0][j] - states[i-1][0][j] for j in range(len(state[0])-2)]) # 첫 번째 particle 의 운동 변화을 학습한다.  # 결과 state, 맨 앞의 질량을 뺸다.
 
     return input_batch, target_batch
 

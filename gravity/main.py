@@ -8,8 +8,8 @@ dim = 2
 n_particle = 3
 dt = 0.0005
 
-system_2 = System(name = "3ptl_2dim",
-                  n = 2.,
+system_2 = System(name = "3ptl_2dim_lin",
+                  n = -1.,
                   k = -1.,
                   dt = dt,
                   n_particles = n_particle,
@@ -22,7 +22,7 @@ for _ in range(n_particle):
                              v_init=np.array([0] * dim, dtype=float))
     system_2.add(ptl1)
 
-system_2.make_testcase(5000, 200, 0.3)
+system_2.make_testcase(5000, 200, 0.01)
 # system_2.make_testcase(200, 5, 0.01)
 # n = 1000000
 # for i in range(n):

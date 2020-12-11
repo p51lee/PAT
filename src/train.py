@@ -19,14 +19,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables CUDA training.')
 parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train.')
+parser.add_argument('--epochs', type=int, default=200, help='Number of epochs to train.')
 parser.add_argument('--lr', type=float, default=0.01, help='Initial learning rate.')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
 parser.add_argument('--hidden1', type=int, default=256, help='Number of hidden units.')
 parser.add_argument('--hidden2', type=int, default=128, help='Number of hidden units.')
 parser.add_argument('--nb_heads1', type=int, default=16, help='Number of head attentions.')
 parser.add_argument('--nb_heads2', type=int, default=8, help='Number of head attentions.')
-parser.add_argument('--dropout', type=float, default=0.4, help='Dropout rate (1 - keep probability).')
+parser.add_argument('--dropout', type=float, default=0.2, help='Dropout rate (1 - keep probability).')
 parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leaky_relu.')
 parser.add_argument('--patience', type=int, default=10, help='Patience')
 
@@ -39,32 +39,34 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-system_name = '3ptl_2dim_128' # input("Enter system name")
+system_name = '3ptl_2dim_lin_064' # input("Enter system name")
 dimension = 2
-epoch_size = 20
+epoch_size = 150
 total_epoch_size = 180
+num_particle = 3
 
 
 # Load data (only for some information)
 data_temp = load_data(system_name, 0)
 
 # Model and optimizer
-model = FCGAT(n_input_features=2*dimension,
+model = FCGAT(n_input_features=dimension,
               n_hidden_features1=args.hidden1,
               n_hidden_features2=args.hidden2,
-              n_output_features=2*dimension,
+              n_output_features=dimension,
               dropout=args.dropout,
               n_heads1=args.nb_heads1,
               n_heads2=args.nb_heads2,
-              alpha=args.alpha
+              alpha=args.alpha,
+              num_particle=num_particle
               )
 
 optimizer = optim.Adam(model.parameters(),
                        lr=args.lr,
                        weight_decay=args.weight_decay)
 
-# criterion = nn.L1Loss()
-criterion = nn.MSELoss()
+criterion = nn.L1Loss()
+# criterion = nn.MSELoss()
 
 if args.cuda:
     model.cuda()
@@ -97,12 +99,14 @@ def train(batch, epoch, epoch_total, log_dir, file_index):  # batch starts from 
     # print(input_features_batch.size(), target_features_batch.size())
     for input_feature_minibatch in input_features_batch:
         output_minibatch = model(input_feature_minibatch)
+        # print(output_minibatch)
         outputs.append(output_minibatch)
 
     output_batch = torch.stack(outputs).cuda()
 
+    # print(output_batch.size(), target_features_batch.size())
     loss_train = F.mse_loss(output_batch, target_features_batch)
-
+    # print(loss_train)
     loss_train.backward()
     optimizer.step()
 
@@ -188,12 +192,14 @@ for epoch in range(args.epochs):
 
     model.eval()
     feat_temp = load_data(system_name, 0)
-    frame_temp_1 = torch.FloatTensor(feat_temp[5]).cuda()
-    frame_temp_2 = torch.FloatTensor(feat_temp[6]).cuda()
+    input_feat_temp, target_feat_temp = make_batch(feat_temp)
+    index = random.randint(0, len(input_feat_temp)-1)
+    frame_temp_1 = torch.FloatTensor(input_feat_temp[index]).cuda()
+    frame_temp_2 = torch.FloatTensor(target_feat_temp[index]).cuda()
 
     frame_model = model(frame_temp_1)
-    print("Previous state: ", frame_temp_1)
-    print("True value: ", frame_temp_2)
+    # print("Previous state:   ", frame_temp_1[0])
+    print("True value:       ", frame_temp_2)
     print('Model prediction: ', frame_model)
     model.train()
 

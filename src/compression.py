@@ -1,7 +1,7 @@
 import os
 from utils import comp_data
 
-sys_name = "3ptl_2dim"
+sys_name = "3ptl_2dim_lin"
 
 
 comp_rate_list = [256, 512, 1024] #
