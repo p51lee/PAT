@@ -3,7 +3,7 @@ import os
 from utils import load_data
 
 
-x = torch.FloatTensor([[0,0],[0,0]])
+x = torch.FloatTensor([[1,2],[3,4]])
 y = torch.FloatTensor([[2,2],[2,2]])
-criterion = torch.nn.MSELoss()
-print(criterion(x,y))
+print(x)
+print(torch.mean(x, 0))
