@@ -1,10 +1,10 @@
 .idea/
-data/
-model_save/
-train log/
-data_comp/
-data_eval/
-data_prediction/
+#data/
+#model_save/
+#train log/
+#data_comp/
+#data_eval/
+#data_prediction/
 src/__pycache__/
 visualization/
 OS_pseudo.py
