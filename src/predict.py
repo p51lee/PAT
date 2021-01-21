@@ -13,12 +13,21 @@ from models import FCGAT
     128: 35th, 0.1652
     256: 8th, 0.8928
     512: 5th, 3.7892
+    
+2dim 3ptl lin with acc
+    512 04th, 1.8694
+    256 34th, 0.2737
+    128 34th, 0.0691
+    064 23th, 0.0190
+    032 21th, 0.0043
+    016 35th, 0.0004
+    008 29th, 0.0004
 """
 
 sys_name = "3ptl_2dim_lin"
 comp_rate = 512
 sys_comp_name = sys_name + "_" + "{:03d}".format(comp_rate)
-best_epoch = 5
+best_epoch = 4
 dt = 0.0005 * comp_rate
 
 dimension = 2
@@ -30,10 +39,10 @@ nb_heads1 = 16
 nb_heads2 = 8
 alpha = 0.01
 
-model = FCGAT(n_input_features=dimension,
+model = FCGAT(n_input_features=dimension*2,
               n_hidden_features1=hidden1,
               n_hidden_features2=hidden2,
-              n_output_features=dimension*2,
+              n_output_features=dimension*3,
               dropout=dropout,
               n_heads1=nb_heads1,
               n_heads2=nb_heads2,
@@ -42,7 +51,7 @@ model = FCGAT(n_input_features=dimension,
               )
 model.eval()
 
-def step_old(init_frame, time_interval):
+def step_old(init_frame, time_interval): # unused
     init_state_pos = torch.FloatTensor([ptl_state[0:2] for ptl_state in init_frame])
     diff_state_pos = []
 
@@ -73,21 +82,24 @@ def step_old(init_frame, time_interval):
 
     return next_frame
 
-def step(init_frame, time_interval):
-    init_state_pos = torch.FloatTensor([ptl_state[0:2] for ptl_state in init_frame])
-    init_state_vel = torch.FloatTensor([ptl_state[2:4] for ptl_state in init_frame])
+def step(init_frame_1st, init_frame_2nd, time_interval):
+    init_state_pos = torch.FloatTensor([ptl_state[0:2] for ptl_state in init_frame_2nd])
+    init_state_vel = torch.FloatTensor([ptl_state[2:4] for ptl_state in init_frame_2nd])
     diff_state_pos = []
     diff_state_vel = []
 
     for ptl_idx in range(num_particle):
-        init_frame_rev = init_frame[ptl_idx:] + init_frame[:ptl_idx]
+        init_frame_rev_1st = init_frame_1st[ptl_idx:] + init_frame_1st[:ptl_idx]
+        init_frame_rev_2nd = init_frame_2nd[ptl_idx:] + init_frame_2nd[:ptl_idx]
         input_chars = []
-        for index_ps, ptl_state in enumerate(init_frame_rev):
+        for index_ps, ptl_state in enumerate(init_frame_rev_2nd):
             if index_ps == 0:
-                input_chars.append(init_frame_rev[index_ps][2:4]) # 속도넣기
+                delta_v = np.array(init_frame_rev_2nd[index_ps][2:4]) - np.array(init_frame_rev_1st[index_ps][2:4])
+                input_chars.append(init_frame_rev_2nd[index_ps][2:4] + delta_v.tolist()) # 속도넣기 추가된 속도변화넣기
             else:
-                rel_position = np.array(init_frame_rev[index_ps][0:2]) - np.array(init_frame_rev[0][0:2])
-                input_chars.append(rel_position.tolist()) # 위치넣기
+                rel_position = np.array(init_frame_rev_2nd[index_ps][0:2]) - np.array(init_frame_rev_2nd[0][0:2])
+                rel_velosity = np.array(init_frame_rev_2nd[index_ps][2:4]) - np.array(init_frame_rev_2nd[0][2:4])
+                input_chars.append(rel_position.tolist() + rel_velosity.tolist()) # 위치넣기와 추가된 속도넣기
 
         input_chars = torch.FloatTensor(input_chars)
         diff_chars = model(input_chars)
@@ -126,12 +138,14 @@ while True:
         break
 
     n_frames = len(data)
-    initial_frame = data[0]
+    initial_frame_1st = data[0]
+    initial_frame_2nd = data[1]
 
     for _ in range(n_frames):
-        next_frame = step(initial_frame, dt)
+        next_frame = step(initial_frame_1st, initial_frame_2nd, dt)
         for sth_to_write in sum(next_frame, []):
             fd.write(str(sth_to_write) + "\n")
-        initial_frame = next_frame
+        initial_frame_1st = initial_frame_2nd
+        initial_frame_2nd = next_frame
     fd.close()
     file_index += 1

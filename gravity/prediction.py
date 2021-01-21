@@ -10,7 +10,7 @@ from gravity_utils import load_data
 
 sys_origin = "3ptl_2dim_lin"
 sys_name = sys_origin + "_control"
-comp_rate = 128
+comp_rate = 512
 sys_comp_name = sys_name + "_" + "{:03d}".format(comp_rate)
 sys_origin_comp = sys_origin +  "_" + "{:03d}".format(comp_rate)
 
@@ -49,6 +49,7 @@ while True:
     for _ in range(n_frames):
         system_2.step(file_index)
 
+    print(file_index)
     file_index += 1
 
 for _ in range(n_particle):

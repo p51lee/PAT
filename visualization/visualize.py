@@ -78,16 +78,16 @@ def load_prediction_data(sys_name, file_index):
 
         return data
 
-system_name = '3ptl_2dim_lin_512' # input("Enter system name")
-prediction_system_name = '3ptl_2dim_lin_512'
-# prediction_system_name = '3ptl_2dim_lin_control_128'
+system_name = '3ptl_2dim_lin_032' # input("Enter system name")
+# prediction_system_name = '3ptl_2dim_lin_032'
+prediction_system_name = '3ptl_2dim_lin_control_128'
 
 fig, ax = plt.subplots ()
 camera = Camera (fig)
 
 raw_data = load_data (system_name, 0)
-# prediction_data = load_data(prediction_system_name, 0)
-prediction_data = load_prediction_data(prediction_system_name, 0)
+prediction_data = load_data(prediction_system_name, 0)
+# prediction_data = load_prediction_data(prediction_system_name, 0)
 for frame, frame_predicted in list(zip(raw_data, prediction_data)):
     for particle in frame:
         ax.scatter (particle[0], particle[1], c='blue', s=200)
@@ -95,7 +95,7 @@ for frame, frame_predicted in list(zip(raw_data, prediction_data)):
         ax.scatter(particle[0], particle[1], c='red', s=200)
     camera.snap()
 
-animation = camera.animate(interval=256, repeat = True)
+animation = camera.animate(interval=16, repeat = True)
 animation.save ('test_final.gif')
 # fig2, ax2 = plt.subplots ()
 # camera2 = Camera (fig2)

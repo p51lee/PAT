@@ -39,7 +39,7 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-system_name = '3ptl_2dim_lin_256' # input("Enter system name")
+system_name = '3ptl_2dim_lin_512' # input("Enter system name")
 dimension = 2
 epoch_size = 150
 total_epoch_size = 180
@@ -50,10 +50,10 @@ num_particle = 3
 data_temp = load_data(system_name, 0)
 
 # Model and optimizer
-model = FCGAT(n_input_features=dimension,
+model = FCGAT(n_input_features=dimension*2,
               n_hidden_features1=args.hidden1,
               n_hidden_features2=args.hidden2,
-              n_output_features=dimension*2,
+              n_output_features=dimension*3,
               dropout=args.dropout,
               n_heads1=args.nb_heads1,
               n_heads2=args.nb_heads2,
@@ -123,7 +123,7 @@ def train(batch, epoch, epoch_total, log_dir, file_index):  # batch starts from 
           ' | ',
           'File index: {:08d}'.format(file_index),
           ' | ',
-          'loss_train: {:15.4f}'.format(loss_train.data.item()),
+          'loss_train: {:15.7f}'.format(loss_train.data.item()),
           ' | ',
           'time: {:7.4f}s'.format(time.time() - t)
           )

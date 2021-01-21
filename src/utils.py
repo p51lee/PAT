@@ -1,4 +1,3 @@
-import torch
 import os.path
 
 
@@ -49,7 +48,7 @@ def load_prediction(sys_name, file_index):
         return False
     else:
         filename = filename_list[file_index]
-        filepath = '../data/{0}/'.format(sys_name) + filename
+        filepath = '../data_prediction/{0}/'.format(sys_name) + filename
         fd = open(filepath, 'r')
         temp = fd.readlines()
         data_raw = [float(e.strip()) for e in temp]
@@ -165,27 +164,38 @@ def make_batch(states):
     target_batch = []
 
     for i, state in enumerate(states):
-        if i == 0:
+        if i <= 1:
             continue
 
         # 첫 번째 입자에 대한 상대위치를 적자
         prev_state = states[i-1]
+        pre_prev_state = states[i-2]
         first_particle_position_vec = prev_state[0][0:2]
+        first_particle_velocity_vec = prev_state[0][2:4]
 
         # input 으로 들어가는건 첫 번째 입자의 속도, 그리고 나머지들의 상대 위치이다.
         input_frame = []
-        input_frame.append(prev_state[0][2:4]) # 먼저 첫 번째 입자의 속도를 넣는다.
+        delta_v_prev = [prev_state[0][i] - pre_prev_state[0][i] for i in [2,3]]
+        input_frame.append(prev_state[0][2:4] + delta_v_prev) # 먼저 첫 번째 입자의 속도를 넣는다. 그리고 첫 번째 입자의 속도 변화도 넣는다.
+
 
         for idx, ptl_state in enumerate(prev_state):
             if idx == 0: # 우리는 나머지 입자들을 원한다.
                 continue
             else:
-                rel_position = []
+                rel_positionNvelocity = []
                 for pos_i, position in enumerate(ptl_state[0:2]):
-                    rel_position.append(position-first_particle_position_vec[pos_i])
-                input_frame.append(rel_position)
+                    rel_positionNvelocity.append(position-first_particle_position_vec[pos_i])
+
+                for vel_i, velocity in enumerate(ptl_state[2:4]):
+                    rel_positionNvelocity.append(velocity-first_particle_velocity_vec[vel_i])
+                input_frame.append(rel_positionNvelocity)
+
 
         input_batch.append(input_frame)  # 이 전의 state 를 input 으로 기록
-        target_batch.append([state[0][j] - states[i-1][0][j] for j in range(len(state[0]))]) # 첫 번째 particle 의 운동 변화을 학습한다.  # 결과 state, 맨 앞의 질량을 뺸다.
+        delta_xv = [state[0][j] - states[i-1][0][j] for j in range(len(state[0]))]
+        delta_xv_prev = [states[i-1][0][j] - states[i-2][0][j] for j in range(len(state[0]))]
+        delta_a = [delta_xv[k] - delta_xv_prev[k] for k in [2,3]]
+        target_batch.append(delta_xv + delta_a) # 첫 번째 particle 의 운동 변화을 학습한다.  # 결과 state, 맨 앞의 질량을 뺸다.
 
     return input_batch, target_batch
