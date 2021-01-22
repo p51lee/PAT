@@ -87,23 +87,24 @@ class RPAT(nn.Module):
         self.add_module('PAT_h', self.PAT_h)
         self.add_module('PAT_y', self.PAT_y)
 
+        # physical symmetry 때문에 0으로 초기화
         self.h_0 = torch.zeros(size=(num_particles, dimension * 2))
 
     def forward(self, states):
         output_list = []
         for i, state in enumerate(states):
-            if (i == 0):
+            if i == 0:
                 h_t = self.get_h_t(state, self.h_0)
             else:
                 h_t = self.get_h_t(state, h_t)
 
             output_list.append(self.get_y_t(h_t))
 
-        return torch.stack(output_list)
+        return torch.stack(output_list)  # 다다다 출력한 y값들이 나가서 학습에 사용된다.
 
     def get_h_t(self, x_t, h_tm1):  # h_{t-1}
-        Px = self.PAT_x(x_t)
-        Ph = self.PAT_h(h_tm1)
+        Px = self.PAT_x(x_t)  # 입력 x에 pat를 적용한 것
+        Ph = self.PAT_h(h_tm1)  # 그 전의 hidden state에 pat 적용한 것
         return Px + Ph
 
     def get_y_t(self, h_t):
