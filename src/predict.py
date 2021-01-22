@@ -98,8 +98,8 @@ def step(init_frame_1st, init_frame_2nd, time_interval):
                 input_chars.append(init_frame_rev_2nd[index_ps][2:4] + delta_v.tolist()) # 속도넣기 추가된 속도변화넣기
             else:
                 rel_position = np.array(init_frame_rev_2nd[index_ps][0:2]) - np.array(init_frame_rev_2nd[0][0:2])
-                rel_velosity = np.array(init_frame_rev_2nd[index_ps][2:4]) - np.array(init_frame_rev_2nd[0][2:4])
-                input_chars.append(rel_position.tolist() + rel_velosity.tolist()) # 위치넣기와 추가된 속도넣기
+                rel_velocity = np.array(init_frame_rev_2nd[index_ps][2:4]) - np.array(init_frame_rev_2nd[0][2:4])
+                input_chars.append(rel_position.tolist() + rel_velocity.tolist()) # 위치넣기와 추가된 속도넣기
 
         input_chars = torch.FloatTensor(input_chars)
         diff_chars = model(input_chars)
