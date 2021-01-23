@@ -11,8 +11,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from utils import make_batch, make_batch_rev, load_data
-from models import FCGAT, RPAT
+from utils import make_batch, load_data
+from models import FCGAT
 
 # Training settings
 parser = argparse.ArgumentParser()
@@ -22,9 +22,9 @@ parser.add_argument('--seed', type=int, default=42, help='Random seed.')
 parser.add_argument('--epochs', type=int, default=200, help='Number of epochs to train.')
 parser.add_argument('--lr', type=float, default=0.01, help='Initial learning rate.')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
-parser.add_argument('--hidden1', type=int, default=8, help='Number of hidden units.')
+parser.add_argument('--hidden1', type=int, default=256, help='Number of hidden units.')
 parser.add_argument('--hidden2', type=int, default=128, help='Number of hidden units.')
-parser.add_argument('--nb_heads1', type=int, default=2, help='Number of head attentions.')
+parser.add_argument('--nb_heads1', type=int, default=16, help='Number of head attentions.')
 parser.add_argument('--nb_heads2', type=int, default=8, help='Number of head attentions.')
 parser.add_argument('--dropout', type=float, default=0.2, help='Dropout rate (1 - keep probability).')
 parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leaky_relu.')
@@ -39,10 +39,10 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-system_name = '3ptl_2dim_debug'  # input("Enter system name")
+system_name = '3ptl_2dim_lin_512' # input("Enter system name")
 dimension = 2
-epoch_size = 3
-total_file_number = 5
+epoch_size = 150
+total_epoch_size = 180
 num_particle = 3
 
 
@@ -50,24 +50,32 @@ num_particle = 3
 data_temp = load_data(system_name, 0)
 
 # Model and optimizer
-model = RPAT(
-    num_particles=num_particle,
-    dimension=dimension,
-    n_hidden_features=args.hidden1,
-    dropout=args.dropout,
-    alpha=args.alpha,
-    n_heads=args.nb_heads1
-)
+model = FCGAT(n_input_features=dimension*2,
+              n_hidden_features1=args.hidden1,
+              n_hidden_features2=args.hidden2,
+              n_output_features=dimension*3,
+              dropout=args.dropout,
+              n_heads1=args.nb_heads1,
+              n_heads2=args.nb_heads2,
+              alpha=args.alpha,
+              num_particle=num_particle
+              )
 
 optimizer = optim.Adam(model.parameters(),
                        lr=args.lr,
                        weight_decay=args.weight_decay)
 
-criterion = nn.L1Loss()  # 절댓값 차이로 loss 계산
-# criterion = nn.MSELoss()  # 편차의 제곱으로 loss 계산
+criterion = nn.L1Loss()
+# criterion = nn.MSELoss()
 
 if args.cuda:
     model.cuda()
+    # features = features.cuda()
+    # adj = adj.cuda()
+    # labels = labels.cuda()
+    # idx_train = idx_train.cuda()
+    # idx_val = idx_val.cuda()
+    # idx_test = idx_test.cuda()
 
 
 def train(batch, epoch, epoch_total, log_dir, file_index):  # batch starts from 0
@@ -80,23 +88,21 @@ def train(batch, epoch, epoch_total, log_dir, file_index):  # batch starts from 
     if features == False:
         print("fuck")
         return False
-    input_features_batch, target_features_batch = make_batch_rev(features)
+    input_features_batch, target_features_batch = make_batch(features)
     input_features_batch = torch.FloatTensor(input_features_batch)
     target_features_batch = torch.FloatTensor(target_features_batch)
     if args.cuda:
         input_features_batch = input_features_batch.cuda()
         target_features_batch = target_features_batch.cuda()
 
-    output_batch = model(input_features_batch)
+    outputs = []
+    # print(input_features_batch.size(), target_features_batch.size())
+    for input_feature_minibatch in input_features_batch:
+        output_minibatch = model(input_feature_minibatch)
+        # print(output_minibatch)
+        outputs.append(output_minibatch)
 
-    # outputs = []
-    # # print(input_features_batch.size(), target_features_batch.size())
-    # for input_feature_minibatch in input_features_batch:
-    #     output_minibatch = model(input_feature_minibatch)
-    #     # print(output_minibatch)
-    #     outputs.append(output_minibatch)
-    #
-    # output_batch = torch.stack(outputs).cuda()
+    output_batch = torch.stack(outputs).cuda()
 
     # print(output_batch.size(), target_features_batch.size())
     loss_train = F.mse_loss(output_batch, target_features_batch)
@@ -161,7 +167,7 @@ log_dir = "../train log/{1}/{0}.txt".format(now, system_name)
 for epoch in range(args.epochs):
     loss_value = 0
     batch = 0
-    file_indices = list(range(total_file_number))
+    file_indices = list(range(total_epoch_size))
     while(True):
         file_index = random.choice(file_indices)
         file_indices.remove(file_index)

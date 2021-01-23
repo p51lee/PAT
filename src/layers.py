@@ -139,10 +139,14 @@ class PATLayer(nn.Module):  # FCGAT와 동일한 input을 받아서 여러 개 p
             init_frame_indexed = torch.cat((init_frame[ptl_idx:], init_frame[:ptl_idx]), 0)
 
             # W matrix를 곱해줌으로서 첫 번째  particle이 특별하다는 것을 학습
+
+            if init_frame_indexed.size() == torch.Size([12]):
+                print(init_frame_indexed)
+
             init_frame_relative = torch.mm(self.W_relativity, init_frame_indexed)
             x = self.GAT_x(init_frame_relative)
-            x = torch.mm(self.W_weightSum, x).squeeze(0)
+            # x = torch.mm(self.W_weightSum, x).squeeze(0)
 
             x_out_list.append(x)
 
-        return torch.cat(x_out_list, 0)
+        return torch.stack(x_out_list, 0)

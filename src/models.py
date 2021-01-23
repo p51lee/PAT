@@ -44,20 +44,11 @@ class FCGAT(nn.Module):
 
 
 class RPAT(nn.Module):
-    def __init__(self, num_particles, dimension, n_hidden_fearues, dropout, alpha, n_heads):
+    def __init__(self, num_particles, dimension, n_hidden_features, dropout, alpha, n_heads):
         super(RPAT, self).__init__()
 
         self.PAT_x = PATLayer(
-            n_hidden_features=n_hidden_fearues,
-            dimension=dimension,
-            dropout=dropout,
-            n_heads=n_heads,
-            alpha=alpha,
-            num_particles=num_particles
-        )
-
-        self.PAT_x = PATLayer(
-            n_hidden_features=n_hidden_fearues,
+            n_hidden_features=n_hidden_features,
             dimension=dimension,
             dropout=dropout,
             n_heads=n_heads,
@@ -66,7 +57,7 @@ class RPAT(nn.Module):
         )
 
         self.PAT_h = PATLayer(
-            n_hidden_features=n_hidden_fearues,
+            n_hidden_features=n_hidden_features,
             dimension=dimension,
             dropout=dropout,
             n_heads=n_heads,
@@ -75,7 +66,7 @@ class RPAT(nn.Module):
         )
 
         self.PAT_y = PATLayer(
-            n_hidden_features=n_hidden_fearues,
+            n_hidden_features=n_hidden_features,
             dimension=dimension,
             dropout=dropout,
             n_heads=n_heads,

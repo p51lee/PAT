@@ -2,6 +2,7 @@ import os.path
 
 
 def load_data(sys_name, file_index):
+    # 텍스트파일로 저장된
     filename_list = os.listdir('../data/{0}'.format(sys_name))
     if file_index >= len(filename_list):
         return False
@@ -199,3 +200,7 @@ def make_batch(states):
         target_batch.append(delta_xv + delta_a) # 첫 번째 particle 의 운동 변화을 학습한다.  # 결과 state, 맨 앞의 질량을 뺸다.
 
     return input_batch, target_batch
+
+# 새로 쓸 make_batch 함수
+def make_batch_rev(states):
+    return (states[:-1], states[1:])
