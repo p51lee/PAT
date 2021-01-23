@@ -108,11 +108,12 @@ class GATLayer(nn.Module):  # FCGAT와 동일, 하지만 새로운 layer로서�
 
 
 class PATLayer(nn.Module):  # FCGAT와 동일한 input을 받아서 여러 개 particle 차원의 output
-    def __init__(self, num_particles, dimension, n_hidden_features, dropout, alpha, n_heads):
+    def __init__(self, num_particles, dimension, n_hidden_features, dropout, alpha, n_heads, name="PAT layer"):
         super(PATLayer, self).__init__()
 
         self.num_particles = num_particles
         self.dim = dimension
+        self.name = name
 
         self.GAT_x = GATLayer(
             n_input_features=dimension * 2,
@@ -136,12 +137,13 @@ class PATLayer(nn.Module):  # FCGAT와 동일한 input을 받아서 여러 개 p
         x_out_list = []
 
         for ptl_idx in range(self.num_particles):
-            init_frame_indexed = torch.cat((init_frame[ptl_idx:], init_frame[:ptl_idx]), 0)
+            init_frame_indexed = torch.cat((init_frame[ptl_idx:], init_frame[:ptl_idx]), 0).cuda()
 
             # W matrix를 곱해줌으로서 첫 번째  particle이 특별하다는 것을 학습
 
-            if init_frame_indexed.size() == torch.Size([12]):
-                print(init_frame_indexed)
+            # print(self.W_relativity.size())
+            # print(init_frame)
+            # print(self.name)
 
             init_frame_relative = torch.mm(self.W_relativity, init_frame_indexed)
             x = self.GAT_x(init_frame_relative)

@@ -53,7 +53,8 @@ class RPAT(nn.Module):
             dropout=dropout,
             n_heads=n_heads,
             alpha=alpha,
-            num_particles=num_particles
+            num_particles=num_particles,
+            name="PAT_x"
         )
 
         self.PAT_h = PATLayer(
@@ -62,7 +63,8 @@ class RPAT(nn.Module):
             dropout=dropout,
             n_heads=n_heads,
             alpha=alpha,
-            num_particles=num_particles
+            num_particles=num_particles,
+            name="PAT_h"
         )
 
         self.PAT_y = PATLayer(
@@ -71,7 +73,8 @@ class RPAT(nn.Module):
             dropout=dropout,
             n_heads=n_heads,
             alpha=alpha,
-            num_particles=num_particles
+            num_particles=num_particles,
+            name="PAT_y"
         )
 
         self.add_module('PAT_x', self.PAT_x)
@@ -82,6 +85,7 @@ class RPAT(nn.Module):
         self.h_0 = torch.zeros(size=(num_particles, dimension * 2))
 
     def forward(self, states):
+        # print("states", states)
         output_list = []
         for i, state in enumerate(states):
             if i == 0:
@@ -89,7 +93,11 @@ class RPAT(nn.Module):
             else:
                 h_t = self.get_h_t(state, h_t)
 
-            output_list.append(self.get_y_t(h_t))
+            # output_list.append(self.get_y_t(h_t))  # 이거는 절대적인 좌표를 학습하는 방식
+            output_list.append(state + self.get_y_t(h_t))  # 이거는 상대적인 차이를 학습하는 방식
+            # output_list.append(state)  # 이거는 대조군,  train.py 의 loss_train.backward() 과
+            #     optimizer.step() 을 주석처리해놓으면 한 characteristic 당 0.0523 의 오차가 생김을 볼 수 있다.
+            # 따라서 이거보다 큰 오차를 가지면 큰일난다.
 
         return torch.stack(output_list)  # 다다다 출력한 y값들이 나가서 학습에 사용된다.
 
@@ -100,3 +108,22 @@ class RPAT(nn.Module):
 
     def get_y_t(self, h_t):
         return self.PAT_y(h_t)
+
+
+class RPATRecursive(RPAT):  # 이 클래스는 input 을 한 번만 받고 계속 자신의 결과를 이용하면서 운동을 예측한다.
+    def __init__(self, num_particles, dimension, n_hidden_features, dropout, alpha, n_heads):
+        super(RPATRecursive, self).__init__(num_particles, dimension, n_hidden_features, dropout, alpha, n_heads)
+
+    def forward(self, states):
+        state = states[0]
+        output_list = []
+        for i, _ in enumerate(states):
+            if i == 0:
+                h_t = self.get_h_t(state, self.h_0)
+            else:
+                h_t = self.get_h_t(state, h_t)
+
+            state = state + self.get_y_t(h_t)
+            output_list.append(state)  # 이거는 상대적인 차이를 학습하는 방식
+
+        return torch.stack(output_list)  # 다다다 출력한 y값들이 나가서 학습에 사용된다.

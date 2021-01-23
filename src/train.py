@@ -12,23 +12,23 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from utils import make_batch, make_batch_rev, load_data
-from models import FCGAT, RPAT
+from models import FCGAT, RPAT, RPATRecursive
 
 # Training settings
 parser = argparse.ArgumentParser()
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables CUDA training.')
 parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=200, help='Number of epochs to train.')
-parser.add_argument('--lr', type=float, default=0.01, help='Initial learning rate.')
+parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs to train.')
+parser.add_argument('--lr', type=float, default=0.001, help='Initial learning rate.')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
-parser.add_argument('--hidden1', type=int, default=8, help='Number of hidden units.')
+parser.add_argument('--hidden1', type=int, default=64, help='Number of hidden units.')
 parser.add_argument('--hidden2', type=int, default=128, help='Number of hidden units.')
-parser.add_argument('--nb_heads1', type=int, default=2, help='Number of head attentions.')
+parser.add_argument('--nb_heads1', type=int, default=16, help='Number of head attentions.')
 parser.add_argument('--nb_heads2', type=int, default=8, help='Number of head attentions.')
-parser.add_argument('--dropout', type=float, default=0.2, help='Dropout rate (1 - keep probability).')
+parser.add_argument('--dropout', type=float, default=0.1, help='Dropout rate (1 - keep probability).')
 parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leaky_relu.')
-parser.add_argument('--patience', type=int, default=10, help='Patience')
+parser.add_argument('--patience', type=int, default=2000, help='Patience')
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -45,12 +45,14 @@ epoch_size = 3
 total_file_number = 5
 num_particle = 3
 
+frame_per_file = 3
+
 
 # Load data (only for some information)
 data_temp = load_data(system_name, 0)
 
 # Model and optimizer
-model = RPAT(
+model = RPATRecursive(
     num_particles=num_particle,
     dimension=dimension,
     n_hidden_features=args.hidden1,
@@ -87,6 +89,8 @@ def train(batch, epoch, epoch_total, log_dir, file_index):  # batch starts from 
         input_features_batch = input_features_batch.cuda()
         target_features_batch = target_features_batch.cuda()
 
+    # print("input features batch", input_features_batch)
+
     output_batch = model(input_features_batch)
 
     # outputs = []
@@ -100,7 +104,11 @@ def train(batch, epoch, epoch_total, log_dir, file_index):  # batch starts from 
 
     # print(output_batch.size(), target_features_batch.size())
     loss_train = F.mse_loss(output_batch, target_features_batch)
+
+    # print(output_batch)
+    # print(target_features_batch)
     # print(loss_train)
+
     loss_train.backward()
     optimizer.step()
 
@@ -109,18 +117,18 @@ def train(batch, epoch, epoch_total, log_dir, file_index):  # batch starts from 
     fd.write(current_log)
     fd.close()
 
-    print('{:6.3f}%'.format(epoch*100/epoch_total),
-          ' | ',
-          'Epoch: {:08d}'.format(epoch + 1),
-          ' | ',
-          'Batch: {:08d}'.format(batch + 1),
-          ' | ',
-          'File index: {:08d}'.format(file_index),
-          ' | ',
-          'loss_train: {:15.7f}'.format(loss_train.data.item()),
-          ' | ',
-          'time: {:7.4f}s'.format(time.time() - t)
-          )
+    # print('{:6.3f}%'.format(epoch*100/epoch_total),
+    #       ' | ',
+    #       'Epoch: {:08d}'.format(epoch + 1),
+    #       ' | ',
+    #       'Batch: {:08d}'.format(batch + 1),
+    #       ' | ',
+    #       'File index: {:08d}'.format(file_index),
+    #       ' | ',
+    #       'loss_train: {:15.7f}'.format(loss_train.data.item()),
+    #       ' | ',
+    #       'time: {:7.4f}s'.format(time.time() - t)
+    #       )
 
     return loss_train.data.item()
 
@@ -181,21 +189,21 @@ for epoch in range(args.epochs):
           ' | ',
           'Epoch: {:08d}'.format(epoch + 1),
           ' | ',
-          'loss_train_rms: {:15.4f}'.format((loss_value / epoch_size)),
+          'loss_train_mean: {:15.4f}'.format((loss_value / epoch_size)/(num_particle*dimension*2*frame_per_file)),
           )
 
-    model.eval()
-    feat_temp = load_data(system_name, 0)
-    input_feat_temp, target_feat_temp = make_batch(feat_temp)
-    index = random.randint(0, len(input_feat_temp)-1)
-    frame_temp_1 = torch.FloatTensor(input_feat_temp[index]).cuda()
-    frame_temp_2 = torch.FloatTensor(target_feat_temp[index]).cuda()
-
-    frame_model = model(frame_temp_1)
-    # print("Previous state:   ", frame_temp_1[0])
-    # print("True value:       ", frame_temp_2)
-    # print('Model prediction: ', frame_model)
-    model.train()
+    # model.eval()
+    # feat_temp = load_data(system_name, 0)
+    # input_feat_temp, target_feat_temp = make_batch(feat_temp)
+    # index = random.randint(0, len(input_feat_temp)-1)
+    # frame_temp_1 = torch.FloatTensor(input_feat_temp[index]).cuda()
+    # frame_temp_2 = torch.FloatTensor(target_feat_temp[index]).cuda()
+    #
+    # frame_model = model(frame_temp_1)
+    # # print("Previous state:   ", frame_temp_1[0])
+    # # print("True value:       ", frame_temp_2)
+    # # print('Model prediction: ', frame_model)
+    # model.train()
 
     loss_values.append(loss_value)
 
