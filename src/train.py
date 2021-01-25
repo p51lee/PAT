@@ -12,7 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from utils import make_batch, make_batch_rev, load_data
-from models import FCGAT, RPAT, RPATRecursive
+from models import FCGAT, RPAT, RPATRecursive, RPATLiteRecursive
 
 # Training settings
 parser = argparse.ArgumentParser()
@@ -20,7 +20,7 @@ parser.add_argument('--no-cuda', action='store_true', default=False, help='Disab
 parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
 parser.add_argument('--epochs', type=int, default=1000, help='Number of epochs to train.')
-parser.add_argument('--lr', type=float, default=0.00005, help='Initial learning rate.')
+parser.add_argument('--lr', type=float, default=0.0001, help='Initial learning rate.')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
 parser.add_argument('--hidden1', type=int, default=256, help='Number of hidden units.')
 parser.add_argument('--hidden2', type=int, default=128, help='Number of hidden units.')
@@ -39,24 +39,36 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-system_name = '3ptl_2dim_short_000256'  # input("Enter system name")
+system_name = '3ptl_2dim_long_001024'  # input("Enter system name")
 dimension = 2
 epoch_size = 100
 total_file_number = 200
 num_particle = 3
+
+n_hidden_rnn = 24
 
 
 # Load data (only for some information)
 data_temp = load_data(system_name, 0)
 
 # Model and optimizer
-model = RPATRecursive(
+# model = RPATRecursive(
+#     num_particles=num_particle,
+#     dimension=dimension,
+#     n_hidden_features=args.hidden1,
+#     dropout=args.dropout,
+#     alpha=args.alpha,
+#     n_heads=args.nb_heads1
+# )
+
+model = RPATLiteRecursive(
     num_particles=num_particle,
     dimension=dimension,
     n_hidden_features=args.hidden1,
     dropout=args.dropout,
     alpha=args.alpha,
-    n_heads=args.nb_heads1
+    n_heads=args.nb_heads1,
+    n_hidden_rnn=n_hidden_rnn
 )
 
 optimizer = optim.Adam(model.parameters(),
@@ -186,7 +198,7 @@ for epoch in range(args.epochs):
 
     print('{:6.3f}%'.format(epoch * 100 / args.epochs),
           ' | ',
-          'Epoch: {:08d}'.format(epoch + 1),
+          'Epoch: {:08d}'.format(epoch),
           ' | ',
           'loss_train_mean: {:15.4f}'.format((loss_value / epoch_size)),
           )

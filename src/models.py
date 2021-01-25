@@ -123,8 +123,8 @@ class RPATRecursive(RPAT):  # 이 클래스는 input 을 한 번만 받고 계�
 
             # 재귀적으로 학습하는 모델은 상대적인 차이를 학습하는 방식이 잘 맞지 않는 것 같다.
 
-            # state = state + self.get_y_t(h_t)  # 이거는 상대적인 차이를 학습하는 방식
-            state = self.get_y_t(h_t)  # 이거는 절대적인 값을 학습하는 방식.
+            state = state + self.get_y_t(h_t)  # 이거는 상대적인 차이를 학습하는 방식
+            # state = self.get_y_t(h_t)  # 이거는 절대적인 값을 학습하는 방식.
             output_list.append(state)
 
         return torch.stack(output_list)  # 다다다 출력한 y값들이 나가서 학습에 사용된다.
@@ -146,14 +146,17 @@ class RPATLite(nn.Module):
 
         self.add_module('PAT_y', self.PAT_y)
 
-        self.h_0 = torch.zeros(size=(n_hidden_rnn, dimension * 2))
+        self.h_0 = torch.empty(size=(n_hidden_rnn, dimension * 2))
+        if self.training:
+            self.h_0 = self.h_0.cuda()
+
         nn.init.xavier_uniform_(self.h_0, gain=1.414)
 
         self.W_h = nn.Parameter(torch.empty(size=(n_hidden_rnn, n_hidden_rnn)))
         nn.init.xavier_uniform_(self.W_h, gain=1.414)
 
         self.W_x = nn.Parameter(torch.empty(size=(n_hidden_rnn, num_particles)))
-        nn.init.xavier_uniform_(self.W_xh, gain=1.414)
+        nn.init.xavier_uniform_(self.W_x, gain=1.414)
 
         self.W_y = nn.Parameter(torch.empty(size=(num_particles, n_hidden_rnn)))
         nn.init.xavier_uniform_(self.W_y, gain=1.414)
@@ -194,8 +197,8 @@ class RPATLiteRecursive(RPATLite):
             else:
                 h_t = self.get_h_t(state, h_t)
 
-            # state = state + self.get_y_t(h_t)  # 이거는 상대적인 차이를 학습하는 방식
-            state = self.get_y_t(h_t)  # 이거는 절대적인 값을 학습하는 방식
+            state = state + self.get_y_t(h_t)  # 이거는 상대적인 차이를 학습하는 방식
+            # state = self.get_y_t(h_t)  # 이거는 절대적인 값을 학습하는 방식
             output_list.append(state)
 
         return torch.stack(output_list)  # 다다다 출력한 y값들이 나가서 학습에 사용된다.
