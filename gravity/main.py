@@ -8,7 +8,7 @@ dim = 2
 n_particle = 3
 dt = 2**(-14)
 
-system_2 = System(name="3ptl_2dim_long",
+system_2 = System(name="3ptl_2dim_short",
                   n=-1.,
                   k=-1.,
                   dt=dt,
@@ -23,8 +23,8 @@ for _ in range(n_particle):
                              v_init=np.array([0] * dim, dtype=float))
     system_2.add(ptl)
 
-# system_2.make_testcase(frame_number=2048, testcase_number=200, min_distance=0.00001)
-system_2.make_testcase(frame_number=65536, testcase_number=1, min_distance=0.00001)
+system_2.make_testcase(frame_number=2048, testcase_number=200, min_distance=0.00001)
+# system_2.make_testcase(frame_number=65536, testcase_number=1, min_distance=0.00001)
 
 # system_2.make_testcase(200, 5, 0.01)
 # n = 1000000

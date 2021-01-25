@@ -39,7 +39,7 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-system_name = '3ptl_2dim_000256'  # input("Enter system name")
+system_name = '3ptl_2dim_short_000256'  # input("Enter system name")
 dimension = 2
 epoch_size = 100
 total_file_number = 200
