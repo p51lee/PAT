@@ -19,16 +19,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables CUDA training.')
 parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs to train.')
-parser.add_argument('--lr', type=float, default=0.001, help='Initial learning rate.')
+parser.add_argument('--epochs', type=int, default=1000, help='Number of epochs to train.')
+parser.add_argument('--lr', type=float, default=0.00005, help='Initial learning rate.')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
 parser.add_argument('--hidden1', type=int, default=64, help='Number of hidden units.')
 parser.add_argument('--hidden2', type=int, default=128, help='Number of hidden units.')
-parser.add_argument('--nb_heads1', type=int, default=16, help='Number of head attentions.')
+parser.add_argument('--nb_heads1', type=int, default=4, help='Number of head attentions.')
 parser.add_argument('--nb_heads2', type=int, default=8, help='Number of head attentions.')
 parser.add_argument('--dropout', type=float, default=0.1, help='Dropout rate (1 - keep probability).')
 parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leaky_relu.')
-parser.add_argument('--patience', type=int, default=2000, help='Patience')
+parser.add_argument('--patience', type=int, default=20, help='Patience')
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -39,13 +39,13 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-system_name = '3ptl_2dim_debug'  # input("Enter system name")
+system_name = '3ptl_2dim_002048'  # input("Enter system name")
 dimension = 2
-epoch_size = 3
-total_file_number = 5
+epoch_size = 20
+total_file_number = 3000
 num_particle = 3
 
-frame_per_file = 3
+frame_per_file = 50000
 
 
 # Load data (only for some information)
@@ -103,7 +103,7 @@ def train(batch, epoch, epoch_total, log_dir, file_index):  # batch starts from 
     # output_batch = torch.stack(outputs).cuda()
 
     # print(output_batch.size(), target_features_batch.size())
-    loss_train = F.mse_loss(output_batch, target_features_batch)
+    loss_train = F.l1_loss(output_batch, target_features_batch) # 절댓값 차이로 loss 계산
 
     # print(output_batch)
     # print(target_features_batch)
@@ -117,18 +117,19 @@ def train(batch, epoch, epoch_total, log_dir, file_index):  # batch starts from 
     fd.write(current_log)
     fd.close()
 
-    # print('{:6.3f}%'.format(epoch*100/epoch_total),
-    #       ' | ',
-    #       'Epoch: {:08d}'.format(epoch + 1),
-    #       ' | ',
-    #       'Batch: {:08d}'.format(batch + 1),
-    #       ' | ',
-    #       'File index: {:08d}'.format(file_index),
-    #       ' | ',
-    #       'loss_train: {:15.7f}'.format(loss_train.data.item()),
-    #       ' | ',
-    #       'time: {:7.4f}s'.format(time.time() - t)
-    #       )
+    print('{:6.3f}%'.format(epoch*100/epoch_total),
+          ' | ',
+          'Epoch: {:08d}'.format(epoch + 1),
+          ' | ',
+          'Batch: {:08d}'.format(batch + 1),
+          ' | ',
+          'File index: {:08d}'.format(file_index),
+          ' | ',
+          'loss_train: {:15.7f}'.format(loss_train.data.item()
+                                        /(num_particle*dimension*2*frame_per_file)),
+          ' | ',
+          'time: {:7.4f}s'.format(time.time() - t)
+          )
 
     return loss_train.data.item()
 

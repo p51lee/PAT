@@ -82,7 +82,7 @@ def load_prediction(sys_name, file_index):
 def comp_data(sys_name, file_index, comp_rate):
 
     # filename_list = os.listdir('../data/{0}'.format(sys_name))
-    filename_list = os.listdir('../data_comp/{0}/{1:03d}'.format(sys_name, comp_rate//2))
+    filename_list = os.listdir('../data_comp/{0}/{1:06d}'.format(sys_name, comp_rate//2))
 
     if file_index >= len(filename_list):
         return False
@@ -91,7 +91,7 @@ def comp_data(sys_name, file_index, comp_rate):
     else:
         filename = filename_list[file_index]
         # filepath = '../data/{0}/'.format(sys_name) + filename
-        filepath = '../data_comp/{0}/{1:03d}/'.format(sys_name, comp_rate//2) + filename
+        filepath = '../data_comp/{0}/{1:06d}/'.format(sys_name, comp_rate//2) + filename
         fd = open(filepath, 'r')
         temp = fd.readlines()
         data_raw = [float(e.strip()) for e in temp]
@@ -124,13 +124,13 @@ def comp_data(sys_name, file_index, comp_rate):
             frame_index += 2
 
         dir1 = '../data_comp/{0}'.format(sys_name)
-        dir2 = '../data_comp/{0}/{1:03d}'.format(sys_name, comp_rate)
+        dir2 = '../data_comp/{0}/{1:06d}'.format(sys_name, comp_rate)
         if not os.path.exists(dir1):
             os.makedirs(dir1)
         if not os.path.exists(dir2):
             os.makedirs(dir2)
 
-        filepath_comp = '../data_comp/{0}/{1:03d}/'.format(sys_name, comp_rate) + filename
+        filepath_comp = '../data_comp/{0}/{1:06d}/'.format(sys_name, comp_rate) + filename
 
         str_write = ''
         str_write += "{0}\n{1}\n".format(dim, n_particles)
