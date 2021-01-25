@@ -23,8 +23,8 @@ for _ in range(n_particle):
                              v_init=np.array([0] * dim, dtype=float))
     system_2.add(ptl)
 
-system_2.make_testcase(frame_number=65536, testcase_number=3000, min_distance=0.0001)
-# system_2.make_testcase(200, 5, 0.01)
+# system_2.make_testcase(frame_number=65536, testcase_number=3000, min_distance=0.0001)
+system_2.make_testcase(200, 5, 0.01)
 # n = 1000000
 # for i in range(n):
 #     if (100 * i) % n == 0:
