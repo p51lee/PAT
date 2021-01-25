@@ -1,9 +1,9 @@
 import os
 from utils import comp_data
 
-sys_name = "3ptl_2dim"
+sys_name = "3ptl_2dim_long"
 
-comp_rate_list = [2 ** n for n in range(1, 12)]
+comp_rate_list = [2 ** n for n in range(1, 9)]
 
 '''
 data_comp 디렉토리 안에 system name 디렉토리를 만들고,
