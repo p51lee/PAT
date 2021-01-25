@@ -22,22 +22,25 @@ from models import FCGAT, RPATRecursive
     032 21th, 0.0043
     016 35th, 0.0004
     008 29th, 0.0004
+    
+    2dim 3ptl
+    256 52nd, 0.7872
 """
 
-sys_name = "3ptl_2dim_lin"
-comp_rate = 512
-sys_comp_name = sys_name + "_" + "{:03d}".format(comp_rate)
-best_epoch = 4
-dt = 0.0005 * comp_rate
+sys_name = "3ptl_2dim"
+comp_rate = 256
+sys_comp_name = sys_name + "_" + "{:06d}".format(comp_rate)
+best_epoch = 52
+dt = 2**(-14) * comp_rate
 
 dimension = 2
 num_particle = 3
 hidden1 = 256
 # hidden2 = 128
-dropout = 0.2
-nb_heads1 = 16
+dropout = 0.1
+nb_heads1 = 8
 # nb_heads2 = 8
-alpha = 0.01
+alpha = 0.2
 
 model = RPATRecursive(
     num_particles=num_particle,
@@ -49,47 +52,14 @@ model = RPATRecursive(
 )
 model.eval()
 
-def step(init_frame_1st, init_frame_2nd, time_interval):
-    init_state_pos = torch.FloatTensor([ptl_state[0:2] for ptl_state in init_frame_2nd])
-    init_state_vel = torch.FloatTensor([ptl_state[2:4] for ptl_state in init_frame_2nd])
-    diff_state_pos = []
-    diff_state_vel = []
 
-    for ptl_idx in range(num_particle):
-        init_frame_rev_1st = init_frame_1st[ptl_idx:] + init_frame_1st[:ptl_idx]
-        init_frame_rev_2nd = init_frame_2nd[ptl_idx:] + init_frame_2nd[:ptl_idx]
-        input_chars = []
-        for index_ps, ptl_state in enumerate(init_frame_rev_2nd):
-            if index_ps == 0:
-                delta_v = np.array(init_frame_rev_2nd[index_ps][2:4]) - np.array(init_frame_rev_1st[index_ps][2:4])
-                input_chars.append(init_frame_rev_2nd[index_ps][2:4] + delta_v.tolist()) # 속도넣기 추가된 속도변화넣기
-            else:
-                rel_position = np.array(init_frame_rev_2nd[index_ps][0:2]) - np.array(init_frame_rev_2nd[0][0:2])
-                rel_velocity = np.array(init_frame_rev_2nd[index_ps][2:4]) - np.array(init_frame_rev_2nd[0][2:4])
-                input_chars.append(rel_position.tolist() + rel_velocity.tolist()) # 위치넣기와 추가된 속도넣기
-
-        input_chars = torch.FloatTensor(input_chars)
-        diff_chars = model(input_chars)
-        # print(diff_chars)
-        # print('hey', input_chars, '\n', diff_chars)
-        diff_state_pos.append(diff_chars.tolist()[0:2])
-        diff_state_vel.append(diff_chars.tolist()[2:4])
-
-    next_state_pos = init_state_pos + torch.FloatTensor(diff_state_pos)
-    next_state_vel = init_state_vel + torch.FloatTensor(diff_state_vel)
-
-    # next_state_vel = [[(next_state_pos[idx_ptl][k]-init_state_pos[idx_ptl][k]) / time_interval for k in range(dimension)] for idx_ptl in range(num_particle)]
-    # print(next_state_vel)
-    # next_frame = [next_state_pos[idx_ptl] + next_state_vel[idx_ptl] for idx_ptl in range(num_particle)]
-    next_frame = torch.cat((next_state_pos, next_state_vel), 1).tolist()
-
-    return next_frame
 
 # Restore best model
 print('Loading {}th epoch'.format(best_epoch))
 model.load_state_dict(torch.load('../model_save/{0}_epoch{1:05d}.pkl'.format(sys_comp_name, best_epoch)))
 
-
+# TODO: 일단 임시로 해놓음
+sys_comp_name = "3ptl_2dim_long" + "_" + "{:06d}".format(comp_rate)
 
 file_index = 0
 while True:
@@ -105,6 +75,8 @@ while True:
     data = load_data(sys_comp_name, file_index)
     if not data:
         break
+    else:
+        data = torch.FloatTensor(data)
 
     input_features_batch, _ = make_batch_rev(data)
 
