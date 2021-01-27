@@ -81,16 +81,16 @@ def load_prediction_data(sys_name, file_index):
         return data
 
 
-system_name = '3ptl_2dim_000256'  # input("Enter system name")
-prediction_system_name = '3ptl_2dim_000256'
+system_name = '3ptl_2dim_short_000256'  # input("Enter system name")
+prediction_system_name = '3ptl_2dim_short_000256'
 # prediction_system_name = '3ptl_2dim_lin_control_128'
 
 fig, ax = plt.subplots()
 camera = Camera(fig)
 
-raw_data = load_data(system_name, 0)
+raw_data = load_data(system_name, 4)[1:]  # 첫 번째 frame은 제거한다. 모듈이 내뿜는것에는 없기 때문
 # prediction_data = load_data(prediction_system_name, 0)
-prediction_data = load_prediction_data(prediction_system_name, 0)
+prediction_data = load_prediction_data(prediction_system_name, 4)
 for frame, frame_predicted in list(zip(raw_data, prediction_data)):
     for particle in frame:
         ax.scatter(particle[0], particle[1], c='blue', s=200)
@@ -98,7 +98,7 @@ for frame, frame_predicted in list(zip(raw_data, prediction_data)):
         ax.scatter(particle[0], particle[1], c='red', s=100)
     camera.snap()
 
-animation = camera.animate(interval=16, repeat=True)
+animation = camera.animate(interval=1000/16, repeat=True)
 animation.save('test_final.gif')
 # fig2, ax2 = plt.subplots ()
 # camera2 = Camera (fig2)

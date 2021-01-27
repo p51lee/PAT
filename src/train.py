@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables CUDA training.')
 parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
-parser.add_argument('--epochs', type=int, default=1000, help='Number of epochs to train.')
+parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs to train.')
 parser.add_argument('--lr', type=float, default=0.0001, help='Initial learning rate.')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
 parser.add_argument('--hidden1', type=int, default=256, help='Number of hidden units.')
@@ -39,13 +39,14 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-system_name = '3ptl_2dim_long_001024'  # input("Enter system name")
+system_name = '3ptl_2dim_long_001024'
+
 dimension = 2
 epoch_size = 100
 total_file_number = 200
 num_particle = 3
 
-n_hidden_rnn = 24
+n_hidden_rnn = 48
 
 
 # Load data (only for some information)
@@ -61,15 +62,24 @@ data_temp = load_data(system_name, 0)
 #     n_heads=args.nb_heads1
 # )
 
-model = RPATLiteRecursive(
+model = RPAT(
     num_particles=num_particle,
     dimension=dimension,
     n_hidden_features=args.hidden1,
     dropout=args.dropout,
     alpha=args.alpha,
-    n_heads=args.nb_heads1,
-    n_hidden_rnn=n_hidden_rnn
+    n_heads=args.nb_heads1
 )
+
+# model = RPATLiteRecursive(
+#     num_particles=num_particle,
+#     dimension=dimension,
+#     n_hidden_features=args.hidden1,
+#     dropout=args.dropout,
+#     alpha=args.alpha,
+#     n_heads=args.nb_heads1,
+#     n_hidden_rnn=n_hidden_rnn
+# )
 
 optimizer = optim.Adam(model.parameters(),
                        lr=args.lr,

@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 from utils import make_batch, load_data, make_batch_rev
-from models import FCGAT, RPATRecursive
+from models import FCGAT, RPATRecursive, RPATLiteRecursive
 
 """
 2dim 3ptl lin
@@ -25,12 +25,28 @@ from models import FCGAT, RPATRecursive
     
     2dim 3ptl
     256 52nd, 0.7872
+    
+    1번마
+    2dim 3ptl short(64fps)
+    256 994th, 0.1866
+    
+    2번마
+    2dim 3ptl long(16fps) (lite hid 24)
+    1024 974th, 0.3405
+    
+    3번마
+    2dim 3ptl long(16fps) (recursive)
+    1024
+    
+    4번마
+    2dim 3ptl long(16fps) (non_recursive)
+    1024
 """
 
-sys_name = "3ptl_2dim"
+sys_name = "3ptl_2dim_short"
 comp_rate = 256
 sys_comp_name = sys_name + "_" + "{:06d}".format(comp_rate)
-best_epoch = 52
+best_epoch = 994
 dt = 2**(-14) * comp_rate
 
 dimension = 2
@@ -41,6 +57,7 @@ dropout = 0.1
 nb_heads1 = 8
 # nb_heads2 = 8
 alpha = 0.2
+n_hidden_rnn = 24
 
 model = RPATRecursive(
     num_particles=num_particle,
@@ -50,6 +67,17 @@ model = RPATRecursive(
     alpha=alpha,
     n_heads=nb_heads1
 )
+# model = RPATLiteRecursive(
+#     num_particles=num_particle,
+#     dimension=dimension,
+#     n_hidden_features=hidden1,
+#     dropout=dropout,
+#     alpha=alpha,
+#     n_heads=nb_heads1,
+#     n_hidden_rnn=n_hidden_rnn
+# )
+model = model.cuda()
+
 model.eval()
 
 
@@ -59,7 +87,7 @@ print('Loading {}th epoch'.format(best_epoch))
 model.load_state_dict(torch.load('../model_save/{0}_epoch{1:05d}.pkl'.format(sys_comp_name, best_epoch)))
 
 # TODO: 일단 임시로 해놓음
-sys_comp_name = "3ptl_2dim_long" + "_" + "{:06d}".format(comp_rate)
+# sys_comp_name = "3ptl_2dim_long" + "_" + "{:06d}".format(comp_rate)
 
 file_index = 0
 while True:
@@ -76,7 +104,7 @@ while True:
     if not data:
         break
     else:
-        data = torch.FloatTensor(data)
+        data = torch.FloatTensor(data).cuda()
 
     input_features_batch, _ = make_batch_rev(data)
 
