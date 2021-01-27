@@ -5,12 +5,15 @@ class IdenticalParticle: # particle with size 0
     def __init__(self,
                  m: float = 1.,
                  x_init: np.ndarray = np.array([0, 0]),
-                 v_init: np.ndarray = np.array([0, 0])):
+                 v_init: np.ndarray = np.array([0, 0]),
+                 pinned: bool = False):
         """(particle number, mass, position vector, velocity vector)"""
         self.m = m
         self.x = np.array(x_init)
         self.v = np.array(v_init)
         self.dim = len(x_init)
+
+        self.pinned = pinned
 
     # def set_number(self, n: int):
     #     self.ptl_number = n;
@@ -25,8 +28,9 @@ class IdenticalParticle: # particle with size 0
         return True
 
     def step(self, dt: float, a: np.ndarray):
-        self.x += self.v * dt
-        self.v += a * dt
+        if not self.pinned:
+            self.x += self.v * dt
+            self.v += a * dt
         return True
 
     def __repr__(self):

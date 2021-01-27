@@ -107,7 +107,40 @@ class GATLayer(nn.Module):  # FCGAT와 동일, 하지만 새로운 layer로서�
         return x
 
 
-class PATLayer(nn.Module):  # FCGAT와 동일한 input을 받아서 여러 개 particle 차원의 output
+# _______________________ 데이터 전처리 함수 ________________________________
+def reorganize_state(state):
+    x_0 = state[0][0:2]
+    reorganized_list = []
+
+    for index, pos_and_vel in enumerate(state):
+        if index == 0:
+            reorganized_list.append(pos_and_vel[2:])
+        else:
+            rel_pos = pos_and_vel[:2] - x_0
+            reorganized_list.append(rel_pos)
+
+    return torch.stack(reorganized_list).cuda()
+
+
+
+class RelGATLayer(GATLayer):
+    def __init__(self, n_input_features, n_hidden_features, n_output_features, dropout, alpha, n_heads, num_particle):
+        super(RelGATLayer, self).__init__(n_input_features, n_hidden_features, n_output_features, dropout, alpha,
+                                          n_heads, num_particle)
+
+    def forward(self, x: torch.FloatTensor):
+        x = F.dropout(x, self.dropout, training=self.training)
+        x = torch.cat([att(x) for att in self.attentions], dim=1)
+        # x = F.dropout(x, self.dropout, training=self.training)
+        # x = torch.cat([att_mid(x) for att_mid in self.middle_attentions], dim=1)
+        x = F.dropout(x, self.dropout, training=self.training)
+        x = self.out_att(x)
+
+        x = torch.mm(self.W, x).squeeze(0)
+        return x
+
+
+class PATLayer(nn.Module):  # FCGAT 와 동일한 input 을 받아서 여러 개 particle 차원의 output
     def __init__(self, num_particles, dimension, n_hidden_features, dropout, alpha, n_heads, name="PAT layer"):
         super(PATLayer, self).__init__()
 

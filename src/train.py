@@ -12,7 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from utils import make_batch, make_batch_rev, load_data
-from models import FCGAT, RPAT, RPATRecursive, RPATLiteRecursive
+from models import FCGAT, RPAT, RPATRecursive, RPATLiteRecursive, RPATLiteRecursivePinned
 
 # Training settings
 parser = argparse.ArgumentParser()
@@ -21,7 +21,7 @@ parser.add_argument('--fastmode', action='store_true', default=False, help='Vali
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
 parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs to train.')
 parser.add_argument('--lr', type=float, default=0.0001, help='Initial learning rate.')
-parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
+parser.add_argument('--weight_decay', type=float, default=5e-5, help='Weight decay (L2 loss on parameters).')
 parser.add_argument('--hidden1', type=int, default=256, help='Number of hidden units.')
 parser.add_argument('--hidden2', type=int, default=128, help='Number of hidden units.')
 parser.add_argument('--nb_heads1', type=int, default=8, help='Number of head attentions.')
@@ -39,20 +39,30 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-system_name = '3ptl_2dim_long_001024'
+system_name = '2pinned_8f_32fps_000512'
 
 dimension = 2
-epoch_size = 100
-total_file_number = 200
+epoch_size = 200
+total_file_number = 400
 num_particle = 3
 
-n_hidden_rnn = 48
+n_hidden_rnn = 24
 
 
 # Load data (only for some information)
 data_temp = load_data(system_name, 0)
 
 # Model and optimizer
+model = RPATLiteRecursivePinned(
+    num_particles=num_particle,
+    dimension=dimension,
+    n_hidden_features=args.hidden1,
+    dropout=args.dropout,
+    alpha=args.alpha,
+    n_heads=args.nb_heads1,
+    n_hidden_rnn=n_hidden_rnn
+)
+
 # model = RPATRecursive(
 #     num_particles=num_particle,
 #     dimension=dimension,
@@ -62,14 +72,14 @@ data_temp = load_data(system_name, 0)
 #     n_heads=args.nb_heads1
 # )
 
-model = RPAT(
-    num_particles=num_particle,
-    dimension=dimension,
-    n_hidden_features=args.hidden1,
-    dropout=args.dropout,
-    alpha=args.alpha,
-    n_heads=args.nb_heads1
-)
+# model = RPAT(
+#     num_particles=num_particle,
+#     dimension=dimension,
+#     n_hidden_features=args.hidden1,
+#     dropout=args.dropout,
+#     alpha=args.alpha,
+#     n_heads=args.nb_heads1
+# )
 
 # model = RPATLiteRecursive(
 #     num_particles=num_particle,
@@ -138,18 +148,18 @@ def train(batch, epoch, epoch_total, log_dir, file_index):  # batch starts from 
     fd.write(current_log)
     fd.close()
 
-    print('{:6.3f}%'.format(epoch*100/epoch_total),
-          ' | ',
-          'Epoch: {:08d}'.format(epoch),
-          ' | ',
-          'Batch: {:08d}'.format(batch),
-          ' | ',
-          'File index: {:08d}'.format(file_index),
-          ' | ',
-          'loss_train: {:15.7f}'.format(loss_train.data.item()),
-          ' | ',
-          'time: {:7.4f}s'.format(time.time() - t)
-          )
+    # print('{:6.3f}%'.format(epoch*100/epoch_total),
+    #       ' | ',
+    #       'Epoch: {:08d}'.format(epoch),
+    #       ' | ',
+    #       'Batch: {:08d}'.format(batch),
+    #       ' | ',
+    #       'File index: {:08d}'.format(file_index),
+    #       ' | ',
+    #       'loss_train: {:15.7f}'.format(loss_train.data.item()),
+    #       ' | ',
+    #       'time: {:7.4f}s'.format(time.time() - t)
+    #       )
 
     return loss_train.data.item()
 

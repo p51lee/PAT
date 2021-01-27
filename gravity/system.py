@@ -170,8 +170,13 @@ class System():
 
             for ptl in self.particles:
                 x_new = np.array([random.uniform(-10, 10) for _ in range(self.dim)])
-                v_new = np.array([random.uniform(-10, 10) for _ in range(self.dim)])
                 m_new = 1
+
+                if ptl.pinned:
+                    v_new = np.array([0.0 for _ in range(self.dim)])
+                else:
+                    v_new = np.array([random.uniform(-10, 10) for _ in range(self.dim)])
+
                 ptl.set_state(x_new, v_new, m_new)
 
             self.step_number = 0

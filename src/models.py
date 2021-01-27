@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from layers import FCGraphAttentionLayer
+from layers import FCGraphAttentionLayer, reorganize_state
 
 
 class FCGAT(nn.Module):
@@ -186,7 +186,8 @@ class RPATLite(nn.Module):
 
 class RPATLiteRecursive(RPATLite):
     def __init__(self, num_particles, dimension, n_hidden_features, dropout, alpha, n_heads, n_hidden_rnn):
-        super(RPATLiteRecursive, self).__init__(num_particles, dimension, n_hidden_features, dropout, alpha, n_heads, n_hidden_rnn)
+        super(RPATLiteRecursive, self).__init__(num_particles, dimension, n_hidden_features, dropout, alpha, n_heads,
+                                                n_hidden_rnn)
 
     def forward(self, states):
         state = states[0]
@@ -202,3 +203,59 @@ class RPATLiteRecursive(RPATLite):
             output_list.append(state)
 
         return torch.stack(output_list)  # 다다다 출력한 y값들이 나가서 학습에 사용된다.
+
+
+class RPATLiteRecursivePinned(nn.Module):
+    def __init__(self, num_particles, dimension, n_hidden_features,
+                 dropout, alpha, n_heads, name="PAT layer", n_hidden_rnn=24):
+        super(RPATLiteRecursivePinned, self).__init__()
+
+        self.num_particles = num_particles
+        self.dim = dimension
+        self.name = name
+
+        self.gatLayer = RelGATLayer(
+            n_input_features=dimension,
+            n_hidden_features=n_hidden_features,
+            n_output_features=dimension * 2,
+            dropout=dropout,
+            n_heads=n_heads,
+            alpha=alpha,
+            num_particle=num_particles)
+
+        self.add_module('GATLayer', self.gatLayer)
+
+        self.h_0 = torch.empty(size=(n_hidden_rnn, dimension)).cuda()
+        nn.init.xavier_uniform_(self.h_0, gain=1.414)
+
+        self.W_h = nn.Parameter(torch.empty(size=(n_hidden_rnn, n_hidden_rnn)))
+        nn.init.xavier_uniform_(self.W_h, gain=1.414)
+
+        self.W_x = nn.Parameter(torch.empty(size=(n_hidden_rnn, num_particles)))
+        nn.init.xavier_uniform_(self.W_x, gain=1.414)
+
+        self.W_y = nn.Parameter(torch.empty(size=(num_particles, n_hidden_rnn)))
+        nn.init.xavier_uniform_(self.W_y, gain=1.414)
+
+    def forward(self, states):
+        output_list = [states[0]]
+        for i, _ in enumerate(states):
+            state_reorganized = reorganize_state(output_list[-1])
+            if i == 0:
+                h_t = self.get_h_t(state_reorganized, self.h_0)
+            else:
+                h_t = self.get_h_t(state_reorganized, h_t)
+
+            next_state_ptl0 = output_list[-1][0] + self.get_y_t(h_t)  # 첫 번째 particle만 변한다.
+            next_state = torch.stack([next_state_ptl0] + [state for state in states[0][1:]])
+            output_list.append(next_state)
+
+        return torch.stack(output_list[:-1])  # 다다다 출력한 y값들이 나가서 학습에 사용된다.
+
+    def get_h_t(self, x_t, h_tm1):
+        Wh = torch.mm(self.W_h, h_tm1)
+        Wx = torch.mm(self.W_x, x_t)  # 입력 x에 pat를 적용한 것
+        return Wh + Wx
+
+    def get_y_t(self, h_t):
+        return self.gatLayer(torch.mm(self.W_y, h_t))
