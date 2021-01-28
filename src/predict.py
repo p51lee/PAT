@@ -44,7 +44,11 @@ from models import FCGAT, RPATRecursive, RPATLiteRecursive
     
     5번마
     2pinned_8f_32fps_000512 (recursive, lite, pinned)
+    797th, 0.775
     
+    6번마
+    2pinned_8f_16fps_001024 (recursive, lite, pinned)
+    504th, 0.1559
 """
 
 sys_name = "3ptl_2dim_short"

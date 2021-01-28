@@ -1,7 +1,7 @@
 import os
 from utils import comp_data
 
-sys_name = "2pinned_8f_32fps"
+sys_name = "2pinned_8f_16fps"
 
 comp_rate_list = [2 ** n for n in range(1, 13)]
 

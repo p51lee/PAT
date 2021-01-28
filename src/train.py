@@ -39,7 +39,7 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-system_name = '2pinned_8f_32fps_000512'
+system_name = '2pinned_8f_16fps_001024'
 
 dimension = 2
 epoch_size = 200
