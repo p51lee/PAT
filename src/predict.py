@@ -36,11 +36,11 @@ from models import FCGAT, RPATRecursive, RPATLiteRecursive
     
     3번마
     2dim 3ptl long(16fps) (recursive)
-    1024
+    1024, 1328th, 안보임
     
     4번마
     2dim 3ptl long(16fps) (non_recursive)
-    1024
+    1024, 569th, 안보임
     
     5번마
     2pinned_8f_32fps_000512 (recursive, lite, pinned)
